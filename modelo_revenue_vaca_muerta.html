@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelo Revenue — Tokenización Vaca Muerta</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: #1a1a18; font-size: 14px; }
+  .page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b6b66; margin-bottom: 2rem; }
+
+  .section-title { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.75rem 0 0.75rem; }
+
+  .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .product-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  .ctrl { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px; }
+  .ctrl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ctrl-label { font-size: 12px; color: #6b6b66; }
+  .ctrl-val { font-size: 14px; font-weight: 500; color: #1a1a18; }
+  input[type=range] { width: 100%; accent-color: #185FA5; cursor: pointer; }
+
+  .product-badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; margin-bottom: 8px; }
+  .badge-gas { background: #e6f1fb; color: #185FA5; }
+  .badge-propano { background: #e1f5ee; color: #0F6E56; }
+  .badge-butano { background: #faeeda; color: #854F0B; }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider-toggle { position: absolute; inset: 0; background: #ccc; border-radius: 18px; cursor: pointer; transition: background 0.2s; }
+  .slider-toggle:before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: white; border-radius: 50%; transition: transform 0.2s; }
+  input:checked + .slider-toggle { background: #185FA5; }
+  input:checked + .slider-toggle:before { transform: translateX(16px); }
+  .toggle-label { font-size: 12px; color: #6b6b66; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1.5rem 0; }
+  .metric { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px; }
+  .metric-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: #1a1a18; }
+  .metric-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+  .scenario-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .tab { font-size: 12px; padding: 5px 14px; border: 0.5px solid #ccc; border-radius: 8px; background: transparent; cursor: pointer; color: #6b6b66; transition: all 0.15s; }
+  .tab:hover { background: #f0eeea; }
+  .tab.active { background: #e6f1fb; color: #185FA5; border-color: #b5d4f4; font-weight: 500; }
+
+  .chart-container { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 1.25rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b6b66; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  .chart-wrap { position: relative; height: 280px; }
+
+  .table-wrap { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; overflow: hidden; margin-top: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #f8f7f4; padding: 10px 14px; text-align: left; font-weight: 500; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid #e0dfd8; }
+  tbody td { padding: 10px 14px; border-bottom: 0.5px solid #f0eeea; color: #1a1a18; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #fafaf8; }
+  .td-right { text-align: right; }
+  .td-bold { font-weight: 500; }
+  .td-total { background: #f8f7f4; font-weight: 500; }
+
+  .note { font-size: 11px; color: #aaa; margin-top: 1.5rem; border-top: 0.5px solid #e0dfd8; padding-top: 1rem; line-height: 1.6; }
+  .note b { color: #888; font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .controls-grid, .product-controls { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Modelo de revenue — mercado secundario tokenizado</h1>
+  <p class="subtitle">Ecosistema Financiero Vaca Muerta · Gasolina natural, propano y butano</p>
+
+  <div class="section-title">Parámetros generales</div>
+  <div class="controls-grid">
+    <div class="ctrl">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Gas tratado hoy (M m³/día)</span>
+        <span class="ctrl-val" id="gas0-out">30</span>
+      </div>
+      <input type="range" min="10" max="100" step="5" value="30" id="gas0-sl">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Gas tratado en año 5 (M m³/día)</span>
+        <span class="ctrl-val" id="gas5-out">60</span>
+      </div>
+      <input type="range" min="10" max="150" step="5" value="60" id="gas5-sl">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Fee por transacción (%)</span>
+        <span class="ctrl-val" id="fee-out">1.0%</span>
+      </div>
+      <input type="range" min="0.1" max="3" step="0.1" value="1" id="fee-sl">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Gasolina: yield (ton/M m³ gas)</span>
+        <span class="ctrl-val" id="yield-out">27</span>
+      </div>
+      <input type="range" min="10" max="60" step="1" value="27" id="yield-sl">
+    </div>
+  </div>
+
+  <div class="section-title">Productos tokenizados</div>
+  <div class="product-controls">
+
+    <div class="ctrl">
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="tog-gas" checked><span class="slider-toggle"></span></label>
+        <span class="toggle-label">Incluir en modelo</span>
+      </div>
+      <span class="product-badge badge-gas">Gasolina natural</span>
+      <div class="ctrl-header">
+        <span class="ctrl-label">Precio (USD/ton)</span>
+        <span class="ctrl-val" id="pgas-out">250</span>
+      </div>
+      <input type="range" min="100" max="500" step="10" value="250" id="pgas-sl">
+    </div>
+
+    <div class="ctrl">
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="tog-pro" checked><span class="slider-toggle"></span></label>
+        <span class="toggle-label">Incluir en modelo</span>
+      </div>
+      <span class="product-badge badge-propano">Propano</span>
+      <div class="ctrl-header">
+        <span class="ctrl-label">Precio (USD/ton)</span>
+        <span class="ctrl-val" id="ppro-out">250</span>
+      </div>
+      <input type="range" min="100" max="500" step="10" value="250" id="ppro-sl">
+      <div class="ctrl-header" style="margin-top:10px">
+        <span class="ctrl-label">Yield (% del volumen gas)</span>
+        <span class="ctrl-val" id="ypro-out">40%</span>
+      </div>
+      <input type="range" min="10" max="80" step="5" value="40" id="ypro-sl">
+    </div>
+
+    <div class="ctrl">
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="tog-but" checked><span class="slider-toggle"></span></label>
+        <span class="toggle-label">Incluir en modelo</span>
+      </div>
+      <span class="product-badge badge-butano">Butano</span>
+      <div class="ctrl-header">
+        <span class="ctrl-label">Precio (USD/ton)</span>
+        <span class="ctrl-val" id="pbut-out">250</span>
+      </div>
+      <input type="range" min="100" max="500" step="10" value="250" id="pbut-sl">
+      <div class="ctrl-header" style="margin-top:10px">
+        <span class="ctrl-label">Yield (% del volumen gas)</span>
+        <span class="ctrl-val" id="ybut-out">20%</span>
+      </div>
+      <input type="range" min="5" max="50" step="5" value="20" id="ybut-sl">
+    </div>
+  </div>
+
+  <div class="section-title">Escenario de adopción de la plataforma</div>
+  <div class="scenario-tabs">
+    <button class="tab" data-pct="0.10">Conservador 10%</button>
+    <button class="tab active" data-pct="0.25">Medio 25%</button>
+    <button class="tab" data-pct="0.50">Optimista 50%</button>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Mercado total año 1</div>
+      <div class="metric-value" id="m-total">—</div>
+      <div class="metric-sub">USD millones/año</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Volumen tokenizado año 1</div>
+      <div class="metric-value" id="m-tok">—</div>
+      <div class="metric-sub">USD millones/año</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Revenue año 1</div>
+      <div class="metric-value" id="m-rev1">—</div>
+      <div class="metric-sub">USD millones/año</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Revenue año 5</div>
+      <div class="metric-value" id="m-rev5">—</div>
+      <div class="metric-sub">USD millones/año</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#888780"></div>Conservador 10%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Medio 25%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0F6E56; border: 1.5px dashed #0F6E56; background: transparent;"></div>Optimista 50%</div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <div class="section-title">Detalle por año y producto</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Año</th>
+          <th class="td-right">Gas (M m³/d)</th>
+          <th class="td-right">Gasolina</th>
+          <th class="td-right">Propano</th>
+          <th class="td-right">Butano</th>
+          <th class="td-right">Mercado total</th>
+          <th class="td-right">Revenue (escenario)</th>
+        </tr>
+      </thead>
+      <tbody id="detail-table"></tbody>
+    </table>
+  </div>
+
+  <p class="note">
+    <b>Supuestos:</b> Gasolina: yield fijo configurable (default 27 ton/M m³ gas). Propano y butano: yield como % del volumen de gasolina producida (configurable). Precio base $250/ton para los tres productos (Aníbal, Tratayén). Producción de gas crece linealmente entre año 0 y año 5. Revenue = mercado total × % adopción × fee transacción. <b>No incluye:</b> REPO, colateralización, ni otros servicios financieros sobre tokens (upside adicional).
+  </p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  let adoptionPct = 0.25;
+  let chart;
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function fmt(n) { return '$' + n.toFixed(2) + 'M'; }
+  function fmtShort(n) { return '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + 'M'; }
+
+  function getParams() {
+    return {
+      gas0: parseFloat(document.getElementById('gas0-sl').value),
+      gas5: parseFloat(document.getElementById('gas5-sl').value),
+      fee: parseFloat(document.getElementById('fee-sl').value) / 100,
+      yieldGas: parseFloat(document.getElementById('yield-sl').value),
+      pGas: parseFloat(document.getElementById('pgas-sl').value),
+      pPro: parseFloat(document.getElementById('ppro-sl').value),
+      pBut: parseFloat(document.getElementById('pbut-sl').value),
+      yPro: parseFloat(document.getElementById('ypro-sl').value) / 100,
+      yBut: parseFloat(document.getElementById('ybut-sl').value) / 100,
+      incGas: document.getElementById('tog-gas').checked,
+      incPro: document.getElementById('tog-pro').checked,
+      incBut: document.getElementById('tog-but').checked,
+    };
+  }
+
+  function computeYear(p, t) {
+    const gas = lerp(p.gas0, p.gas5, t / 5);
+    const gasoline_ton = gas * p.yieldGas * 365;
+    const propano_ton = gasoline_ton * p.yPro;
+    const butano_ton = gasoline_ton * p.yBut;
+
+    const mktGas = p.incGas ? gasoline_ton * p.pGas / 1e6 : 0;
+    const mktPro = p.incPro ? propano_ton * p.pPro / 1e6 : 0;
+    const mktBut = p.incBut ? butano_ton * p.pBut / 1e6 : 0;
+    const mktTotal = mktGas + mktPro + mktBut;
+
+    return { gas, gasoline_ton, propano_ton, butano_ton, mktGas, mktPro, mktBut, mktTotal };
+  }
+
+  function calc() {
+    const p = getParams();
+    const labels = ['Año 1','Año 2','Año 3','Año 4','Año 5'];
+    const years = [0,1,2,3,4];
+
+    const conservative = [], middle = [], optimistic = [], tableData = [];
+
+    years.forEach((t, i) => {
+      const d = computeYear(p, t);
+      conservative.push(parseFloat((d.mktTotal * 0.10 * p.fee).toFixed(3)));
+      middle.push(parseFloat((d.mktTotal * 0.25 * p.fee).toFixed(3)));
+      optimistic.push(parseFloat((d.mktTotal * 0.50 * p.fee).toFixed(3)));
+      tableData.push(d);
+    });
+
+    const selRevenue = adoptionPct === 0.10 ? conservative : adoptionPct === 0.25 ? middle : optimistic;
+    const d0 = tableData[0];
+
+    document.getElementById('m-total').textContent = fmtShort(d0.mktTotal);
+    document.getElementById('m-tok').textContent = fmtShort(d0.mktTotal * adoptionPct);
+    document.getElementById('m-rev1').textContent = fmt(selRevenue[0]);
+    document.getElementById('m-rev5').textContent = fmt(selRevenue[4]);
+
+    const tbody = document.getElementById('detail-table');
+    tbody.innerHTML = '';
+    tableData.forEach((d, i) => {
+      const rev = selRevenue[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-bold">Año ${i+1}</td>
+        <td class="td-right">${d.gas.toFixed(0)}</td>
+        <td class="td-right">${p.incGas ? fmtShort(d.mktGas) : '—'}</td>
+        <td class="td-right">${p.incPro ? fmtShort(d.mktPro) : '—'}</td>
+        <td class="td-right">${p.incBut ? fmtShort(d.mktBut) : '—'}</td>
+        <td class="td-right td-bold">${fmtShort(d.mktTotal)}</td>
+        <td class="td-right" style="color:#185FA5; font-weight:500">${fmt(rev)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    if (chart) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = conservative;
+      chart.data.datasets[1].data = middle;
+      chart.data.datasets[2].data = optimistic;
+      chart.update();
+    } else {
+      chart = new Chart(document.getElementById('mainChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Conservador 10%', data: conservative, borderColor: '#888780', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: 0.3 },
+            { label: 'Medio 25%', data: middle, borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,0.06)', borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true },
+            { label: 'Optimista 50%', data: optimistic, borderColor: '#0F6E56', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: 0.3, borderDash: [5,4] }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(3) + 'M'
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: v => '$' + v.toFixed(1) + 'M', font: { size: 11 }, color: '#888' },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: { ticks: { font: { size: 11 }, color: '#888' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+  }
+
+  const sliders = [
+    { id: 'gas0-sl', out: 'gas0-out', fmt: v => v },
+    { id: 'gas5-sl', out: 'gas5-out', fmt: v => v },
+    { id: 'fee-sl', out: 'fee-out', fmt: v => parseFloat(v).toFixed(1) + '%' },
+    { id: 'yield-sl', out: 'yield-out', fmt: v => v },
+    { id: 'pgas-sl', out: 'pgas-out', fmt: v => v },
+    { id: 'ppro-sl', out: 'ppro-out', fmt: v => v },
+    { id: 'pbut-sl', out: 'pbut-out', fmt: v => v },
+    { id: 'ypro-sl', out: 'ypro-out', fmt: v => v + '%' },
+    { id: 'ybut-sl', out: 'ybut-out', fmt: v => v + '%' },
+  ];
+
+  sliders.forEach(({ id, out, fmt: f }) => {
+    document.getElementById(id).addEventListener('input', e => {
+      document.getElementById(out).textContent = f(e.target.value);
+      calc();
+    });
+  });
+
+  ['tog-gas','tog-pro','tog-but'].forEach(id => {
+    document.getElementById(id).addEventListener('change', calc);
+  });
+
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      adoptionPct = parseFloat(btn.dataset.pct);
+      calc();
+    });
+  });
+
+  calc();
+</script>
+</body>
+</html>
