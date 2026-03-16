@@ -7,25 +7,24 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: #1a1a18; font-size: 14px; }
-  .page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
   h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
   .subtitle { font-size: 13px; color: #6b6b66; margin-bottom: 2rem; }
-
   .section-title { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.75rem 0 0.75rem; }
 
   .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .product-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
   .ctrl { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px; }
   .ctrl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .ctrl-label { font-size: 12px; color: #6b6b66; }
   .ctrl-val { font-size: 14px; font-weight: 500; color: #1a1a18; }
   input[type=range] { width: 100%; accent-color: #185FA5; cursor: pointer; }
 
+  .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .product-badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; margin-bottom: 8px; }
   .badge-gas { background: #e6f1fb; color: #185FA5; }
   .badge-propano { background: #e1f5ee; color: #0F6E56; }
   .badge-butano { background: #faeeda; color: #854F0B; }
+  .pct-fixed { font-size: 11px; color: #aaa; margin-top: 6px; }
 
   .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
@@ -51,7 +50,6 @@
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b6b66; }
   .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
-
   .chart-wrap { position: relative; height: 280px; }
 
   .table-wrap { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; overflow: hidden; margin-top: 1rem; }
@@ -62,13 +60,15 @@
   tbody tr:hover td { background: #fafaf8; }
   .td-right { text-align: right; }
   .td-bold { font-weight: 500; }
-  .td-total { background: #f8f7f4; font-weight: 500; }
+  .hito { background: #e1f5ee; }
+  .hito td { color: #0F6E56 !important; font-weight: 500; }
 
+  .info-banner { background: #e6f1fb; border: 0.5px solid #b5d4f4; border-radius: 10px; padding: 12px 16px; margin-bottom: 1rem; font-size: 12px; color: #185FA5; display: flex; gap: 10px; align-items: flex-start; }
   .note { font-size: 11px; color: #aaa; margin-top: 1.5rem; border-top: 0.5px solid #e0dfd8; padding-top: 1rem; line-height: 1.6; }
   .note b { color: #888; font-weight: 500; }
 
   @media (max-width: 600px) {
-    .controls-grid, .product-controls { grid-template-columns: 1fr; }
+    .controls-grid, .product-grid { grid-template-columns: 1fr; }
     .metrics { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -76,7 +76,12 @@
 <body>
 <div class="page">
   <h1>Modelo de revenue — mercado secundario tokenizado</h1>
-  <p class="subtitle">Ecosistema Financiero Vaca Muerta · Gasolina natural, propano y butano</p>
+  <p class="subtitle">Ecosistema Financiero Vaca Muerta · Gasolina natural, propano y butano · Datos: Aníbal (TGS)</p>
+
+  <div class="info-banner">
+    <span>ℹ</span>
+    <span>Mix de productos confirmado por TGS: <strong>15% gasolina / 35% butano / 50% propano</strong>. Capacidad actual: 800 m³/día → 2.400 m³/día al entrar en operación el nuevo proyecto (<strong>hito 2030</strong>). Precio de referencia en Tratayén: <strong>USD 250/ton</strong>.</span>
+  </div>
 
   <div class="section-title">Parámetros generales</div>
   <div class="controls-grid">
@@ -89,7 +94,7 @@
     </div>
     <div class="ctrl">
       <div class="ctrl-header">
-        <span class="ctrl-label">Gas tratado en año 5 (M m³/día)</span>
+        <span class="ctrl-label">Gas tratado en 2030 — hito proyecto (M m³/día)</span>
         <span class="ctrl-val" id="gas5-out">60</span>
       </div>
       <input type="range" min="10" max="150" step="5" value="60" id="gas5-sl">
@@ -103,22 +108,23 @@
     </div>
     <div class="ctrl">
       <div class="ctrl-header">
-        <span class="ctrl-label">Gasolina: yield (ton/M m³ gas)</span>
-        <span class="ctrl-val" id="yield-out">27</span>
+        <span class="ctrl-label">Volumen gasolina hoy (m³/día)</span>
+        <span class="ctrl-val" id="vol0-out">800</span>
       </div>
-      <input type="range" min="10" max="60" step="1" value="27" id="yield-sl">
+      <input type="range" min="200" max="3000" step="100" value="800" id="vol0-sl">
+      <div class="pct-fixed">Volumen al hito 2030: 2.400 m³/día (confirmado por TGS)</div>
     </div>
   </div>
 
-  <div class="section-title">Productos tokenizados</div>
-  <div class="product-controls">
+  <div class="section-title">Productos tokenizados — mix confirmado por TGS</div>
+  <div class="product-grid">
 
     <div class="ctrl">
       <div class="toggle-row">
         <label class="toggle"><input type="checkbox" id="tog-gas" checked><span class="slider-toggle"></span></label>
         <span class="toggle-label">Incluir en modelo</span>
       </div>
-      <span class="product-badge badge-gas">Gasolina natural</span>
+      <span class="product-badge badge-gas">Gasolina natural — 15%</span>
       <div class="ctrl-header">
         <span class="ctrl-label">Precio (USD/ton)</span>
         <span class="ctrl-val" id="pgas-out">250</span>
@@ -131,17 +137,12 @@
         <label class="toggle"><input type="checkbox" id="tog-pro" checked><span class="slider-toggle"></span></label>
         <span class="toggle-label">Incluir en modelo</span>
       </div>
-      <span class="product-badge badge-propano">Propano</span>
+      <span class="product-badge badge-propano">Propano — 50%</span>
       <div class="ctrl-header">
         <span class="ctrl-label">Precio (USD/ton)</span>
         <span class="ctrl-val" id="ppro-out">250</span>
       </div>
       <input type="range" min="100" max="500" step="10" value="250" id="ppro-sl">
-      <div class="ctrl-header" style="margin-top:10px">
-        <span class="ctrl-label">Yield (% del volumen gas)</span>
-        <span class="ctrl-val" id="ypro-out">40%</span>
-      </div>
-      <input type="range" min="10" max="80" step="5" value="40" id="ypro-sl">
     </div>
 
     <div class="ctrl">
@@ -149,17 +150,12 @@
         <label class="toggle"><input type="checkbox" id="tog-but" checked><span class="slider-toggle"></span></label>
         <span class="toggle-label">Incluir en modelo</span>
       </div>
-      <span class="product-badge badge-butano">Butano</span>
+      <span class="product-badge badge-butano">Butano — 35%</span>
       <div class="ctrl-header">
         <span class="ctrl-label">Precio (USD/ton)</span>
         <span class="ctrl-val" id="pbut-out">250</span>
       </div>
       <input type="range" min="100" max="500" step="10" value="250" id="pbut-sl">
-      <div class="ctrl-header" style="margin-top:10px">
-        <span class="ctrl-label">Yield (% del volumen gas)</span>
-        <span class="ctrl-val" id="ybut-out">20%</span>
-      </div>
-      <input type="range" min="5" max="50" step="5" value="20" id="ybut-sl">
     </div>
   </div>
 
@@ -172,22 +168,22 @@
 
   <div class="metrics">
     <div class="metric">
-      <div class="metric-label">Mercado total año 1</div>
+      <div class="metric-label">Mercado total hoy</div>
       <div class="metric-value" id="m-total">—</div>
       <div class="metric-sub">USD millones/año</div>
     </div>
     <div class="metric">
-      <div class="metric-label">Volumen tokenizado año 1</div>
-      <div class="metric-value" id="m-tok">—</div>
-      <div class="metric-sub">USD millones/año</div>
+      <div class="metric-label">Mercado total 2030</div>
+      <div class="metric-value" id="m-total5">—</div>
+      <div class="metric-sub">USD millones/año (hito proyecto)</div>
     </div>
     <div class="metric">
-      <div class="metric-label">Revenue año 1</div>
+      <div class="metric-label">Revenue hoy</div>
       <div class="metric-value" id="m-rev1">—</div>
       <div class="metric-sub">USD millones/año</div>
     </div>
     <div class="metric">
-      <div class="metric-label">Revenue año 5</div>
+      <div class="metric-label">Revenue 2030</div>
       <div class="metric-value" id="m-rev5">—</div>
       <div class="metric-sub">USD millones/año</div>
     </div>
@@ -198,17 +194,18 @@
       <div class="legend-item"><div class="legend-dot" style="background:#888780"></div>Conservador 10%</div>
       <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Medio 25%</div>
       <div class="legend-item"><div class="legend-dot" style="background:#0F6E56; border: 1.5px dashed #0F6E56; background: transparent;"></div>Optimista 50%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Hito 2030</div>
     </div>
     <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
   </div>
 
-  <div class="section-title">Detalle por año y producto</div>
+  <div class="section-title">Detalle por año — proyección 2025 → 2030</div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
           <th>Año</th>
-          <th class="td-right">Gas (M m³/d)</th>
+          <th class="td-right">Vol. gasolina (m³/d)</th>
           <th class="td-right">Gasolina</th>
           <th class="td-right">Propano</th>
           <th class="td-right">Butano</th>
@@ -221,7 +218,7 @@
   </div>
 
   <p class="note">
-    <b>Supuestos:</b> Gasolina: yield fijo configurable (default 27 ton/M m³ gas). Propano y butano: yield como % del volumen de gasolina producida (configurable). Precio base $250/ton para los tres productos (Aníbal, Tratayén). Producción de gas crece linealmente entre año 0 y año 5. Revenue = mercado total × % adopción × fee transacción. <b>No incluye:</b> REPO, colateralización, ni otros servicios financieros sobre tokens (upside adicional).
+    <b>Supuestos confirmados por TGS (Aníbal):</b> Mix 15% gasolina / 50% propano / 35% butano sobre volumen total. Volumen actual: 800 m³/día. Hito 2030: 2.400 m³/día al entrar en operación el nuevo proyecto de infraestructura. Precio base USD 250/ton en Tratayén (brida de ingreso al poliducto). Densidades: gasolina ~0.65 kg/L, propano ~0.51 kg/L, butano ~0.58 kg/L. <b>No incluye:</b> REPO, colateralización, tokenización de futuros ni otros servicios financieros sobre tokens (upside adicional significativo).
   </p>
 </div>
 
@@ -230,80 +227,117 @@
   let adoptionPct = 0.25;
   let chart;
 
+  const VOL_2030 = 2400;
+  const DENSITY = { gas: 0.65, pro: 0.51, but: 0.58 };
+  const MIX = { gas: 0.15, pro: 0.50, but: 0.35 };
+
   function lerp(a, b, t) { return a + (b - a) * t; }
   function fmt(n) { return '$' + n.toFixed(2) + 'M'; }
   function fmtShort(n) { return '$' + (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + 'M'; }
 
+  function volToRevenue(volM3day, prices, fee, pct, included) {
+    let total = 0;
+    const items = { gas: 0, pro: 0, but: 0 };
+    const vol = volM3day * 365 * 1000;
+    if (included.gas) {
+      const litros = vol * MIX.gas;
+      const tons = litros * DENSITY.gas / 1000;
+      items.gas = tons * prices.gas / 1e6;
+      total += items.gas;
+    }
+    if (included.pro) {
+      const litros = vol * MIX.pro;
+      const tons = litros * DENSITY.pro / 1000;
+      items.pro = tons * prices.pro / 1e6;
+      total += items.pro;
+    }
+    if (included.but) {
+      const litros = vol * MIX.but;
+      const tons = litros * DENSITY.but / 1000;
+      items.but = tons * prices.but / 1e6;
+      total += items.but;
+    }
+    return { total, items, revenue: total * pct * fee };
+  }
+
   function getParams() {
     return {
+      vol0: parseFloat(document.getElementById('vol0-sl').value),
       gas0: parseFloat(document.getElementById('gas0-sl').value),
       gas5: parseFloat(document.getElementById('gas5-sl').value),
       fee: parseFloat(document.getElementById('fee-sl').value) / 100,
-      yieldGas: parseFloat(document.getElementById('yield-sl').value),
-      pGas: parseFloat(document.getElementById('pgas-sl').value),
-      pPro: parseFloat(document.getElementById('ppro-sl').value),
-      pBut: parseFloat(document.getElementById('pbut-sl').value),
-      yPro: parseFloat(document.getElementById('ypro-sl').value) / 100,
-      yBut: parseFloat(document.getElementById('ybut-sl').value) / 100,
-      incGas: document.getElementById('tog-gas').checked,
-      incPro: document.getElementById('tog-pro').checked,
-      incBut: document.getElementById('tog-but').checked,
+      prices: {
+        gas: parseFloat(document.getElementById('pgas-sl').value),
+        pro: parseFloat(document.getElementById('ppro-sl').value),
+        but: parseFloat(document.getElementById('pbut-sl').value),
+      },
+      included: {
+        gas: document.getElementById('tog-gas').checked,
+        pro: document.getElementById('tog-pro').checked,
+        but: document.getElementById('tog-but').checked,
+      }
     };
   }
 
-  function computeYear(p, t) {
-    const gas = lerp(p.gas0, p.gas5, t / 5);
-    const gasoline_ton = gas * p.yieldGas * 365;
-    const propano_ton = gasoline_ton * p.yPro;
-    const butano_ton = gasoline_ton * p.yBut;
-
-    const mktGas = p.incGas ? gasoline_ton * p.pGas / 1e6 : 0;
-    const mktPro = p.incPro ? propano_ton * p.pPro / 1e6 : 0;
-    const mktBut = p.incBut ? butano_ton * p.pBut / 1e6 : 0;
-    const mktTotal = mktGas + mktPro + mktBut;
-
-    return { gas, gasoline_ton, propano_ton, butano_ton, mktGas, mktPro, mktBut, mktTotal };
-  }
+  const YEARS = [2025, 2026, 2027, 2028, 2029, 2030];
 
   function calc() {
     const p = getParams();
-    const labels = ['Año 1','Año 2','Año 3','Año 4','Año 5'];
-    const years = [0,1,2,3,4];
+    const labels = YEARS.map(y => y === 2030 ? '2030 ★' : String(y));
 
     const conservative = [], middle = [], optimistic = [], tableData = [];
 
-    years.forEach((t, i) => {
-      const d = computeYear(p, t);
-      conservative.push(parseFloat((d.mktTotal * 0.10 * p.fee).toFixed(3)));
-      middle.push(parseFloat((d.mktTotal * 0.25 * p.fee).toFixed(3)));
-      optimistic.push(parseFloat((d.mktTotal * 0.50 * p.fee).toFixed(3)));
-      tableData.push(d);
+    YEARS.forEach((yr, i) => {
+      const t = i / 5;
+      const vol = lerp(p.vol0, VOL_2030, t);
+      const c = volToRevenue(vol, p.prices, p.fee, 0.10, p.included);
+      const m = volToRevenue(vol, p.prices, p.fee, 0.25, p.included);
+      const o = volToRevenue(vol, p.prices, p.fee, 0.50, p.included);
+      conservative.push(parseFloat(c.revenue.toFixed(3)));
+      middle.push(parseFloat(m.revenue.toFixed(3)));
+      optimistic.push(parseFloat(o.revenue.toFixed(3)));
+      tableData.push({ yr, vol, ...m, c: c.revenue, m: m.revenue, o: o.revenue });
     });
 
-    const selRevenue = adoptionPct === 0.10 ? conservative : adoptionPct === 0.25 ? middle : optimistic;
     const d0 = tableData[0];
+    const d5 = tableData[5];
+    const selRev0 = adoptionPct === 0.10 ? conservative[0] : adoptionPct === 0.25 ? middle[0] : optimistic[0];
+    const selRev5 = adoptionPct === 0.10 ? conservative[5] : adoptionPct === 0.25 ? middle[5] : optimistic[5];
 
-    document.getElementById('m-total').textContent = fmtShort(d0.mktTotal);
-    document.getElementById('m-tok').textContent = fmtShort(d0.mktTotal * adoptionPct);
-    document.getElementById('m-rev1').textContent = fmt(selRevenue[0]);
-    document.getElementById('m-rev5').textContent = fmt(selRevenue[4]);
+    document.getElementById('m-total').textContent = fmtShort(d0.total);
+    document.getElementById('m-total5').textContent = fmtShort(d5.total);
+    document.getElementById('m-rev1').textContent = fmt(selRev0);
+    document.getElementById('m-rev5').textContent = fmt(selRev5);
 
     const tbody = document.getElementById('detail-table');
     tbody.innerHTML = '';
     tableData.forEach((d, i) => {
-      const rev = selRevenue[i];
+      const rev = adoptionPct === 0.10 ? d.c : adoptionPct === 0.25 ? d.m : d.o;
       const tr = document.createElement('tr');
+      if (d.yr === 2030) tr.className = 'hito';
       tr.innerHTML = `
-        <td class="td-bold">Año ${i+1}</td>
-        <td class="td-right">${d.gas.toFixed(0)}</td>
-        <td class="td-right">${p.incGas ? fmtShort(d.mktGas) : '—'}</td>
-        <td class="td-right">${p.incPro ? fmtShort(d.mktPro) : '—'}</td>
-        <td class="td-right">${p.incBut ? fmtShort(d.mktBut) : '—'}</td>
-        <td class="td-right td-bold">${fmtShort(d.mktTotal)}</td>
+        <td class="td-bold">${d.yr}${d.yr === 2030 ? ' ★ hito' : ''}</td>
+        <td class="td-right">${Math.round(d.vol).toLocaleString()}</td>
+        <td class="td-right">${p.included.gas ? fmtShort(d.items.gas) : '—'}</td>
+        <td class="td-right">${p.included.pro ? fmtShort(d.items.pro) : '—'}</td>
+        <td class="td-right">${p.included.but ? fmtShort(d.items.but) : '—'}</td>
+        <td class="td-right td-bold">${fmtShort(d.total)}</td>
         <td class="td-right" style="color:#185FA5; font-weight:500">${fmt(rev)}</td>
       `;
       tbody.appendChild(tr);
     });
+
+    const hitoLine = {
+      type: 'line',
+      label: 'Hito 2030',
+      data: YEARS.map((y, i) => i === 5 ? middle[5] : null),
+      pointBackgroundColor: '#EF9F27',
+      pointBorderColor: '#EF9F27',
+      pointRadius: YEARS.map((y, i) => i === 5 ? 8 : 0),
+      pointStyle: 'star',
+      borderWidth: 0,
+      showLine: false,
+    };
 
     if (chart) {
       chart.data.labels = labels;
@@ -318,7 +352,7 @@
           labels,
           datasets: [
             { label: 'Conservador 10%', data: conservative, borderColor: '#888780', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: 0.3 },
-            { label: 'Medio 25%', data: middle, borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,0.06)', borderWidth: 2.5, pointRadius: 4, tension: 0.3, fill: true },
+            { label: 'Medio 25%', data: middle, borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,0.06)', borderWidth: 2.5, pointRadius: YEARS.map((y,i) => i===5?7:4), pointBackgroundColor: YEARS.map((y,i) => i===5?'#EF9F27':'#185FA5'), tension: 0.3, fill: true },
             { label: 'Optimista 50%', data: optimistic, borderColor: '#0F6E56', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: 0.3, borderDash: [5,4] }
           ]
         },
@@ -339,7 +373,10 @@
               ticks: { callback: v => '$' + v.toFixed(1) + 'M', font: { size: 11 }, color: '#888' },
               grid: { color: 'rgba(0,0,0,0.05)' }
             },
-            x: { ticks: { font: { size: 11 }, color: '#888' }, grid: { display: false } }
+            x: {
+              ticks: { font: { size: 11 }, color: '#888', autoSkip: false },
+              grid: { display: false }
+            }
           }
         }
       });
@@ -350,12 +387,10 @@
     { id: 'gas0-sl', out: 'gas0-out', fmt: v => v },
     { id: 'gas5-sl', out: 'gas5-out', fmt: v => v },
     { id: 'fee-sl', out: 'fee-out', fmt: v => parseFloat(v).toFixed(1) + '%' },
-    { id: 'yield-sl', out: 'yield-out', fmt: v => v },
+    { id: 'vol0-sl', out: 'vol0-out', fmt: v => parseInt(v).toLocaleString() },
     { id: 'pgas-sl', out: 'pgas-out', fmt: v => v },
     { id: 'ppro-sl', out: 'ppro-out', fmt: v => v },
     { id: 'pbut-sl', out: 'pbut-out', fmt: v => v },
-    { id: 'ypro-sl', out: 'ypro-out', fmt: v => v + '%' },
-    { id: 'ybut-sl', out: 'ybut-out', fmt: v => v + '%' },
   ];
 
   sliders.forEach(({ id, out, fmt: f }) => {
